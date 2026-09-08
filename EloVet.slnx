@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EloVet.Api/EloVet.Api.csproj" />
+    <Project Path="src/EloVet.Application/EloVet.Application.csproj" />
+    <Project Path="src/EloVet.Domain/EloVet.Domain.csproj" />
+    <Project Path="src/EloVet.Infrastructure/EloVet.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EloVet.IntegrationTests/EloVet.IntegrationTests.csproj" />
+    <Project Path="tests/EloVet.UnitTests/EloVet.UnitTests.csproj" />
+  </Folder>
+</Solution>
