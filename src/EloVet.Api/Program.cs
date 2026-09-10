@@ -1,6 +1,11 @@
+using EloVet.Infrastructure.Mongo;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+//Configuração do MongoDB
+builder.Services.AddMongoDb(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
