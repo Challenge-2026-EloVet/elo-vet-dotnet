@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EloVet.Controllers.ProntuarioController;
 
+[ApiController]
+[Route("api/[controller]")]
 public class ProntuarioController : ControllerBase
 {
     private readonly IProntuarioService _prontuarioService;
