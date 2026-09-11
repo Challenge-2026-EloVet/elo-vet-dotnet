@@ -1,8 +1,8 @@
 namespace EloVet.Domain.Entities
 {
-    public class Prontuario : BaseEntity
+    public class Prontuario
     {
-        public int Id { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
         public Pet Pet { get; set; } = new();
         public List<Consulta> Consultas { get; set; } = [];
         public List<Exame> Exames { get; set; } = [];
