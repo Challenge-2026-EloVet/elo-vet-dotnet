@@ -12,6 +12,11 @@ public static class MongoDependencyInjection
         
         services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
 
+        services.AddHealthChecks()
+            .AddCheck<MongoDbHealthCheck>(
+                "mongodb",
+                tags: new[] { "ready" });
+                
         return services;
     }
 }
