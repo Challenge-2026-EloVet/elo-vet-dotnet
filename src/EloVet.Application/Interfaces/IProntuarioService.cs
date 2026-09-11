@@ -4,8 +4,7 @@ namespace EloVet.Application.Interfaces;
 
 public interface IProntuarioService
 {
-    Task SalvarAsync (Prontuario prontuario);
+    Task SalvarAsync(Prontuario prontuario);
 
-    Task<Prontuario> FindByPetIdAsync (string petId);
-
+    Task<Prontuario> FindByPetIdAsync(string petId);
 }

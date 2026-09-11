@@ -1,4 +1,5 @@
 using EloVet.Application.Interfaces;
+using EloVet.Domain.Entities;
 
 namespace EloVet.Application.Services;
 
@@ -18,6 +19,8 @@ public class ProntuarioService : IProntuarioService
 
     public async Task<Prontuario> FindByPetIdAsync(string petId)
     {
-        return await _prontuarioRepository.FindByPetIdAsync(petId);
+        var prontuario = await _prontuarioRepository.FindByPetIdAsync(petId);
+
+        return prontuario ?? throw new InvalidOperationException("Prontuário não encontrado.");
     }
 }
