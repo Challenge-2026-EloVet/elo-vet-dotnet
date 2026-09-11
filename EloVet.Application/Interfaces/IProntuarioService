@@ -1,3 +1,5 @@
+using EloVet.Domain.Entities;
+
 namespace EloVet.Application.Interfaces;
 
 public interface IProntuarioService

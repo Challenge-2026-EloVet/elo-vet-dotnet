@@ -1,9 +1,11 @@
+using EloVet.Domain.Entities;
+
 namespace EloVet.Application.Interfaces;
 
-public interface IProntuarioService
+public interface IProntuarioRepository
 {
     Task SalvarAsync (Prontuario prontuario);
 
-    Task<Prontuario> FindByPetIdAsync (string petId);
+    Task<Prontuario?> FindByPetIdAsync (string petId);
 
 }
