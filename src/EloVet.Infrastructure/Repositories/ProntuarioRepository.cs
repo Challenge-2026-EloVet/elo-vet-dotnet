@@ -20,7 +20,7 @@ public class ProntuarioRepository : IProntuarioRepository
 
     public async Task<Prontuario?> FindByPetIdAsync(string petId)
     {
-        var filter = Builders<Prontuario>.Filter.Eq(p => p.Id, petId);
+        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Pet.Id, petId);
         return await _prontuarios.Find(filter).FirstOrDefaultAsync();
     }
 }
