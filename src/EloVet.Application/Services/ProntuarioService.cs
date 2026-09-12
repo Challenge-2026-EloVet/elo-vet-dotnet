@@ -14,6 +14,13 @@ public class ProntuarioService : IProntuarioService
 
     public async Task SalvarAsync(Prontuario prontuario)
     {
+        var existente = await _prontuarioRepository.FindByPetIdAsync(prontuario.Pet.Id);
+
+        if (existente is not null)
+        {
+            throw new InvalidOperationException("O pet já possui um prontuário.");
+        }
+
         await _prontuarioRepository.SalvarAsync(prontuario);
     }
 
