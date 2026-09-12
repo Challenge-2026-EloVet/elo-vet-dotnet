@@ -27,16 +27,15 @@ public class ProntuarioService : IProntuarioService
         return await _prontuarioRepository.FindByIdAsync(id);
     }
 
-    public async Task<Prontuario> FindByPetIdAsync(string petId)
+    public async Task<Prontuario?> FindByPetIdAsync(string petId)
     {
-        var prontuario = await _prontuarioRepository.FindByPetIdAsync(petId);
-
-        return prontuario ?? throw new InvalidOperationException("Prontuário não encontrado.");
+        return await _prontuarioRepository.FindByPetIdAsync(petId);
     }
 
-    public async Task<Prontuario?> EditarAsync(Prontuario prontuario)
+    public async Task<Prontuario?> EditarAsync(string id, Prontuario prontuario)
     {
-        return await _prontuarioRepository.EditarAsync(prontuario);
+        prontuario.Id = id;
+        return await _prontuarioRepository.EditarAsync(id, prontuario);
     }
 
     public async Task ExcluirAsync(string id)

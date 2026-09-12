@@ -10,9 +10,9 @@ public interface IProntuarioService
 
     Task<Prontuario?> FindByIdAsync(string id);
 
-    Task<Prontuario> FindByPetIdAsync(string petId);
+    Task<Prontuario?> FindByPetIdAsync(string petId);
 
-    Task <Prontuario?> EditarAsync(Prontuario prontuario);
+    Task<Prontuario?> EditarAsync(string id, Prontuario prontuario);
 
     Task ExcluirAsync(string id);
 }

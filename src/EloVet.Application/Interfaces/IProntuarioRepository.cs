@@ -12,7 +12,7 @@ public interface IProntuarioRepository
 
     Task<Prontuario?> FindByPetIdAsync(string petId);
 
-    Task <Prontuario?> EditarAsync(Prontuario prontuario);
+    Task<Prontuario?> EditarAsync(string id, Prontuario prontuario);
 
     Task ExcluirAsync(string id);
 }

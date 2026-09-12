@@ -35,9 +35,18 @@ public class ProntuarioRepository : IProntuarioRepository
         return await _prontuarios.Find(filter).FirstOrDefaultAsync();
     }
 
-    public async Task<Prontuario?> EditarAsync (Prontuario prontuarioAtualizado)
+    public async Task<Prontuario?> EditarAsync(string id, Prontuario prontuarioAtualizado)
     {
-        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Id, prontuarioAtualizado.Id);
+        var existente = await FindByIdAsync(id);
+
+        if (existente is null)
+        {
+            return null;
+        }
+
+        prontuarioAtualizado.Id = id;
+
+        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Id, id);
         await _prontuarios.ReplaceOneAsync(filter, prontuarioAtualizado);
 
         return prontuarioAtualizado;
