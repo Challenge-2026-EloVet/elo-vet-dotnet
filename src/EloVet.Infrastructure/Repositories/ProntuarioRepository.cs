@@ -18,9 +18,34 @@ public class ProntuarioRepository : IProntuarioRepository
         await _prontuarios.InsertOneAsync(prontuario);
     }
 
+    public async Task<IEnumerable<Prontuario>> ListarAsync()
+    {
+        return await _prontuarios.Find(_ => true).ToListAsync();
+    }
+
+    public async Task<Prontuario?> FindByIdAsync(string id)
+    {
+        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Id, id);
+        return await _prontuarios.Find(filter).FirstOrDefaultAsync();
+    }
+
     public async Task<Prontuario?> FindByPetIdAsync(string petId)
     {
         var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Pet.Id, petId);
         return await _prontuarios.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<Prontuario?> EditarAsync (Prontuario prontuarioAtualizado)
+    {
+        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Id, prontuarioAtualizado.Id);
+        await _prontuarios.ReplaceOneAsync(filter, prontuarioAtualizado);
+
+        return prontuarioAtualizado;
+    }
+
+    public async Task ExcluirAsync(string id)
+    {
+        var filter = Builders<Prontuario>.Filter.Eq(prontuario => prontuario.Id, id);
+        await _prontuarios.DeleteOneAsync(filter);
     }
 }
