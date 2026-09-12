@@ -6,5 +6,13 @@ public interface IProntuarioService
 {
     Task SalvarAsync(Prontuario prontuario);
 
+    Task<IEnumerable<Prontuario>> ListarAsync();
+
+    Task<Prontuario?> FindByIdAsync(string id);
+
     Task<Prontuario> FindByPetIdAsync(string petId);
+
+    Task <Prontuario?> EditarAsync(Prontuario prontuario);
+
+    Task ExcluirAsync(string id);
 }
