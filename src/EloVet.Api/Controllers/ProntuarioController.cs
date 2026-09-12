@@ -33,11 +33,6 @@ public class ProntuarioController : ControllerBase
         }
         catch (InvalidOperationException exception)
         {
-            _logger.LogWarning(
-                exception,
-                "Cadastro de prontuário recusado para o pet {PetId}",
-                prontuario.Pet.Id);
-
             return Conflict(exception.Message);
         }
 
@@ -70,10 +65,6 @@ public class ProntuarioController : ControllerBase
 
         if (prontuario is null)
         {
-            _logger.LogWarning(
-                "Prontuario {ProntuarioId} nao encontrado",
-                id);
-
             return NotFound();
         }
 
