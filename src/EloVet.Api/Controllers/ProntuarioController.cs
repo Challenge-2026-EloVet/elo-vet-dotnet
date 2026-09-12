@@ -24,13 +24,25 @@ public class ProntuarioController : ControllerBase
     public async Task<IActionResult> SalvarAsync(Prontuario prontuario)
     {
         _logger.LogInformation(
-            "Recebida solicitação para cadastrar prontuario do pet {PetId}",
+            "Recebida solicitação para cadastrar prontuário do pet {PetId}",
             prontuario.Pet.Id);
 
-        await _prontuarioService.SalvarAsync(prontuario);
+        try
+        {
+            await _prontuarioService.SalvarAsync(prontuario);
+        }
+        catch (InvalidOperationException exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Cadastro de prontuário recusado para o pet {PetId}",
+                prontuario.Pet.Id);
+
+            return Conflict(exception.Message);
+        }
 
         _logger.LogInformation(
-            "Cadastro de prontuario concluido para o pet {PetId}",
+            "Cadastro de prontuário concluido para o pet {PetId}",
             prontuario.Pet.Id);
 
         return Ok();
