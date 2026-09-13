@@ -1,12 +1,26 @@
 using EloVet.Infrastructure.Mongo;
+using EloVet.Infrastructure.Diagnostics;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Services;
 using EloVet.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//Configuração do Serilog para logging estruturado
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        // Adiciona automaticamente o nome da aplicação em todos os logs.
+        .Enrich.WithProperty("Application", "EloVet.Api")
+        // Adiciona automaticamente o ambiente em que a aplicação está executando.
+        .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
+});
 
 builder.Services.AddControllers();
 
@@ -17,6 +31,9 @@ builder.Services.AddScoped<IProntuarioRepository, ProntuarioRepository>();
 //Configuração do MongoDB
 builder.Services.AddMongoDb(builder.Configuration);
 
+//Configuração do OpenTelemetry para rastreamento distribuído e métricas
+builder.Services.AddOpenTelemetryConfiguration();
+
 //Health Check
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
@@ -25,6 +42,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Configura o middleware que mostra os logs de requisições HTTP no console, incluindo informações como método, caminho, status e tempo de resposta.
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -54,3 +74,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 });
 
 app.Run();
+
+public partial class Program
+{
+}

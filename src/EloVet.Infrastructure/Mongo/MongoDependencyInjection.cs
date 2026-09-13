@@ -16,7 +16,13 @@ public static class MongoDependencyInjection
         services.AddSingleton<IMongoDatabase>(serviceProvider =>
         {
             var mongoClient = serviceProvider.GetRequiredService<IMongoClient>();
-            return mongoClient.GetDatabase("elo-vet");
+
+            var databaseName = configuration
+                .GetSection("MongoDb:DatabaseName")
+                .Value
+                ?? "elo-vet";
+
+            return mongoClient.GetDatabase(databaseName);
         });
 
         services.AddHealthChecks()
