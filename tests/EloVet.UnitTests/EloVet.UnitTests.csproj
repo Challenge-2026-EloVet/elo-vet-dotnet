@@ -23,8 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\..\src\EloVet.Application\EloVet.Application.csproj" />
     <ProjectReference Include="..\..\src\EloVet.Domain\EloVet.Domain.csproj" />
+    <ProjectReference Include="..\..\src\EloVet.Api\EloVet.Api.csproj" />
   </ItemGroup>
 
 </Project>
