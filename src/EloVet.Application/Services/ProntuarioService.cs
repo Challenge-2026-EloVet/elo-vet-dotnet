@@ -15,7 +15,7 @@ public class ProntuarioService : IProntuarioService
         _logger = logger;
     }
 
-    public async Task SalvarAsync(Prontuario prontuario)
+    public async Task<Prontuario> SalvarAsync(Prontuario prontuario)
     {
         _logger.LogInformation("Iniciando cadastro de prontuario para o pet {PetId}", prontuario.Pet.Id);
 
@@ -27,9 +27,11 @@ public class ProntuarioService : IProntuarioService
             throw new InvalidOperationException("O pet já possui um prontuário.");
         }
 
-        await _prontuarioRepository.SalvarAsync(prontuario);
+        var prontuarioSalvo = await _prontuarioRepository.SalvarAsync(prontuario);
 
         _logger.LogInformation("Prontuario salvo com sucesso para o pet {PetId}", prontuario.Pet.Id);
+
+        return prontuarioSalvo;
     }
 
     public async Task<IEnumerable<Prontuario>> ListarAsync()

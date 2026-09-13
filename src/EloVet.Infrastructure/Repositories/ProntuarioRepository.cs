@@ -16,11 +16,12 @@ public class ProntuarioRepository : IProntuarioRepository
         _logger = logger;
     }
 
-    public async Task SalvarAsync(Prontuario prontuario)
+    public async Task<Prontuario> SalvarAsync(Prontuario prontuario)
     {
         try
         {
             await _prontuarios.InsertOneAsync(prontuario);
+            return prontuario;
         }
         catch (Exception exception)
         {

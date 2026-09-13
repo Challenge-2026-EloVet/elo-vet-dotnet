@@ -29,18 +29,21 @@ public class ProntuarioController : ControllerBase
 
         try
         {
-            await _prontuarioService.SalvarAsync(prontuario);
+            var prontuarioSalvo =
+                await _prontuarioService.SalvarAsync(prontuario);
+
+            _logger.LogInformation(
+                "Cadastro de prontuário concluido para o pet {PetId}",
+                prontuario.Pet.Id);
+
+            return Created(
+            $"/api/Prontuario/{prontuarioSalvo.Id}",
+            prontuarioSalvo);
         }
         catch (InvalidOperationException exception)
         {
             return Conflict(exception.Message);
         }
-
-        _logger.LogInformation(
-            "Cadastro de prontuário concluido para o pet {PetId}",
-            prontuario.Pet.Id);
-
-        return Ok();
     }
 
     [HttpGet]

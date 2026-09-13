@@ -4,7 +4,7 @@ namespace EloVet.Application.Interfaces;
 
 public interface IProntuarioRepository
 {
-    Task SalvarAsync(Prontuario prontuario);
+    Task<Prontuario> SalvarAsync(Prontuario prontuario);
 
     Task<IEnumerable<Prontuario>> ListarAsync();
 
