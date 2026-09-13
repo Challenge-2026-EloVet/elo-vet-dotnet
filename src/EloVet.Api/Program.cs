@@ -1,4 +1,5 @@
 using EloVet.Infrastructure.Mongo;
+using EloVet.Infrastructure.Diagnostics;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Services;
 using EloVet.Infrastructure.Repositories;
@@ -29,6 +30,9 @@ builder.Services.AddScoped<IProntuarioRepository, ProntuarioRepository>();
 
 //Configuração do MongoDB
 builder.Services.AddMongoDb(builder.Configuration);
+
+//Configuração do OpenTelemetry para rastreamento distribuído e métricas
+builder.Services.AddOpenTelemetryConfiguration();
 
 //Health Check
 builder.Services.AddHealthChecks()
