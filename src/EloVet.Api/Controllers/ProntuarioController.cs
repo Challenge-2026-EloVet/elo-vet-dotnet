@@ -2,6 +2,7 @@ using EloVet.Application.Interfaces;
 using EloVet.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 
 namespace EloVet.Controllers.ProntuarioController;
 
@@ -64,6 +65,15 @@ public class ProntuarioController : ControllerBase
             "Recebida solicitação para consultar prontuario {ProntuarioId}",
             id);
 
+        if (!ObjectId.TryParse(id, out _))
+        {
+            _logger.LogWarning(
+                "Consulta de prontuario recusada porque o id {ProntuarioId} é inválido",
+                id);
+
+            return BadRequest("O id do prontuário informado não possui um formato válido.");
+        }
+
         var prontuario = await _prontuarioService.FindByIdAsync(id);
 
         if (prontuario is null)
@@ -104,6 +114,16 @@ public class ProntuarioController : ControllerBase
             "Recebida solicitação para atualizar prontuario {ProntuarioId}",
             id);
 
+        if (!ObjectId.TryParse(id, out _))
+        {
+            _logger.LogWarning(
+                "Atualização recusada porque o id {ProntuarioId} é inválido",
+                id);
+
+            return BadRequest(
+                "O id do prontuário informado não possui um formato válido.");
+        }
+
         if (!string.IsNullOrWhiteSpace(prontuario.Id) && prontuario.Id != id)
         {
             _logger.LogWarning(
@@ -135,6 +155,16 @@ public class ProntuarioController : ControllerBase
         _logger.LogInformation(
             "Recebida solicitação para excluir prontuario {ProntuarioId}",
             id);
+
+        if (!ObjectId.TryParse(id, out _))
+        {
+            _logger.LogWarning(
+                "Exclusão recusada porque o id {ProntuarioId} é inválido",
+                id);
+
+            return BadRequest(
+                "O id do prontuário informado não possui um formato válido.");
+        }
 
         var prontuario = await _prontuarioService.FindByIdAsync(id);
 

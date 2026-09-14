@@ -93,7 +93,6 @@ public class ProntuarioServiceTests
             Times.Never);
     }
 
-
     // ============================================================
     // LISTAR ASYNC
     // ============================================================
@@ -106,7 +105,7 @@ public class ProntuarioServiceTests
         {
             new Prontuario
             {
-                Id = "prontuario-001",
+                Id = "507f1f77bcf86cd799439011",
                 Pet = new Pet
                 {
                     Id = "pet-001"
@@ -114,7 +113,7 @@ public class ProntuarioServiceTests
             },
             new Prontuario
             {
-                Id = "prontuario-002",
+                Id = "507f1f77bcf86cd799439012",
                 Pet = new Pet
                 {
                     Id = "pet-002"
@@ -156,7 +155,6 @@ public class ProntuarioServiceTests
             Times.Once);
     }
 
-
     // ============================================================
     // FIND BY ID ASYNC
     // ============================================================
@@ -165,7 +163,7 @@ public class ProntuarioServiceTests
     public async Task FindByIdAsync_ProntuarioExiste_RetornaProntuario()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
@@ -196,7 +194,7 @@ public class ProntuarioServiceTests
     public async Task FindByIdAsync_ProntuarioNaoExiste_RetornaNull()
     {
         // Arrange
-        var id = "prontuario-999";
+        var id = "507f1f77bcf86cd799439012";
 
         _mockRepository
             .Setup(r => r.FindByIdAsync(id))
@@ -213,7 +211,6 @@ public class ProntuarioServiceTests
             Times.Once);
     }
 
-
     // ============================================================
     // FIND BY PET ID ASYNC
     // ============================================================
@@ -226,7 +223,7 @@ public class ProntuarioServiceTests
 
         var prontuario = new Prontuario
         {
-            Id = "prontuario-001",
+            Id = "507f1f77bcf86cd799439011",
             Pet = new Pet
             {
                 Id = petId
@@ -270,7 +267,6 @@ public class ProntuarioServiceTests
             Times.Once);
     }
 
-
     // ============================================================
     // EDITAR ASYNC
     // ============================================================
@@ -279,7 +275,7 @@ public class ProntuarioServiceTests
     public async Task EditarAsync_ProntuarioExiste_AtualizaProntuario()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
@@ -311,7 +307,7 @@ public class ProntuarioServiceTests
     public async Task EditarAsync_ProntuarioNaoExiste_RetornaNull()
     {
         // Arrange
-        var id = "prontuario-999";
+        var id = "507f1f77bcf86cd799439012";
 
         var prontuario = new Prontuario
         {
@@ -337,7 +333,6 @@ public class ProntuarioServiceTests
             Times.Once);
     }
 
-
     // ============================================================
     // EXCLUIR ASYNC
     // ============================================================
@@ -346,7 +341,7 @@ public class ProntuarioServiceTests
     public async Task ExcluirAsync_ProntuarioExiste_ExcluiProntuario()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         _mockRepository
             .Setup(r => r.ExcluirAsync(id))
