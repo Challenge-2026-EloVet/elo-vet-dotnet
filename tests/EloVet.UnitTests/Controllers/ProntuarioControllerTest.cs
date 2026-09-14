@@ -164,7 +164,7 @@ public class ProntuarioControllerTests
     public async Task FindByIdAsync_ProntuarioExiste_RetornaOk()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
@@ -199,7 +199,7 @@ public class ProntuarioControllerTests
     public async Task FindByIdAsync_ProntuarioNaoExiste_RetornaNotFound()
     {
         // Arrange
-        var id = "prontuario-999";
+        var id = "507f1f77bcf86cd799439012";
 
         _mockService
             .Setup(s => s.FindByIdAsync(id))
@@ -284,7 +284,7 @@ public class ProntuarioControllerTests
     public async Task EditarAsync_ProntuarioValido_RetornaOk()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
@@ -320,11 +320,11 @@ public class ProntuarioControllerTests
     public async Task EditarAsync_IdDaRotaDiferenteDoBody_RetornaBadRequest()
     {
         // Arrange
-        var idDaRota = "prontuario-001";
+        var idDaRota = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
-            Id = "prontuario-002",
+            Id = "507f1f77bcf86cd799439012",
             Pet = new Pet
             {
                 Id = "pet-001"
@@ -354,7 +354,7 @@ public class ProntuarioControllerTests
     public async Task EditarAsync_ProntuarioNaoExiste_RetornaNotFound()
     {
         // Arrange
-        var id = "prontuario-999";
+        var id = "507f1f77bcf86cd799439012";
 
         var prontuario = new Prontuario
         {
@@ -388,7 +388,7 @@ public class ProntuarioControllerTests
     public async Task ExcluirAsync_ProntuarioNaoExiste_RetornaNotFound()
     {
         // Arrange
-        var id = "prontuario-999";
+        var id = "507f1f77bcf86cd799439012";
 
         _mockService
             .Setup(s => s.FindByIdAsync(id))
@@ -409,7 +409,7 @@ public class ProntuarioControllerTests
     public async Task ExcluirAsync_ProntuarioExiste_RetornaNoContent()
     {
         // Arrange
-        var id = "prontuario-001";
+        var id = "507f1f77bcf86cd799439011";
 
         var prontuario = new Prontuario
         {
