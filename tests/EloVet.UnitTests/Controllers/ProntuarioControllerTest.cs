@@ -1,4 +1,5 @@
 using EloVet.Application.Interfaces;
+using EloVet.Application.Models;
 using EloVet.Controllers.ProntuarioController;
 using EloVet.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -115,8 +116,13 @@ public class ProntuarioControllerTests
         };
 
         _mockService
-            .Setup(s => s.ListarAsync())
-            .ReturnsAsync(prontuarios);
+            .Setup(s => s.ListarAsync(It.IsAny<ProntuarioQuery>()))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                prontuarios,
+                1,
+                10,
+                1,
+                prontuarios.Count));
 
         // Act
         var resultado = await _controller.ListarAsync();
@@ -124,14 +130,14 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuariosRetornados =
-            Assert.IsAssignableFrom<IEnumerable<Prontuario>>(
-                okResult.Value);
+        var resposta = Assert.IsType<PagedResult<Prontuario>>(okResult.Value);
 
-        Assert.Equal(2, prontuariosRetornados.Count());
+        Assert.Equal(2, resposta.Items.Count());
+        Assert.Equal(1, resposta.PageNumber);
+        Assert.Equal(2, resposta.TotalRecords);
 
         _mockService.Verify(
-            s => s.ListarAsync(),
+            s => s.ListarAsync(It.IsAny<ProntuarioQuery>()),
             Times.Once);
     }
 
@@ -140,8 +146,13 @@ public class ProntuarioControllerTests
     {
         // Arrange
         _mockService
-            .Setup(s => s.ListarAsync())
-            .ReturnsAsync(new List<Prontuario>());
+            .Setup(s => s.ListarAsync(It.IsAny<ProntuarioQuery>()))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                [],
+                1,
+                10,
+                0,
+                0));
 
         // Act
         var resultado = await _controller.ListarAsync();
@@ -149,11 +160,9 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuariosRetornados =
-            Assert.IsAssignableFrom<IEnumerable<Prontuario>>(
-                okResult.Value);
+        var resposta = Assert.IsType<PagedResult<Prontuario>>(okResult.Value);
 
-        Assert.Empty(prontuariosRetornados);
+        Assert.Empty(resposta.Items);
     }
 
     // ============================================================

@@ -1,4 +1,5 @@
 using EloVet.Domain.Entities;
+using EloVet.Application.Models;
 using EloVet.IntegrationTests.FactoryFixture;
 using System.Net;
 using System.Net.Http.Json;
@@ -121,8 +122,8 @@ public class ProntuarioControllerIntegrationTests
         var response = await _client.GetAsync(
             "/api/Prontuario");
 
-        var prontuarios =
-            await response.Content.ReadFromJsonAsync<List<Prontuario>>();
+        var resposta =
+            await response.Content.ReadFromJsonAsync<PagedResult<Prontuario>>();
 
         // Assert
         // A consulta deve retornar sucesso e uma lista.
@@ -130,8 +131,8 @@ public class ProntuarioControllerIntegrationTests
             HttpStatusCode.OK,
             response.StatusCode);
 
-        Assert.NotNull(prontuarios);
-        Assert.NotEmpty(prontuarios);
+        Assert.NotNull(resposta);
+        Assert.NotEmpty(resposta.Items);
     }
 
     [Fact]
