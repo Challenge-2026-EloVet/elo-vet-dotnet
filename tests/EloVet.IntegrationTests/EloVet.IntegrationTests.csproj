@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\EloVet.Api\EloVet.Api.csproj" />
+    <ProjectReference Include="..\..\src\EloVet.Application\EloVet.Application.csproj" />
   </ItemGroup>
 
 </Project>
