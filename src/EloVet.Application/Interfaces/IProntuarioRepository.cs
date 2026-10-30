@@ -1,4 +1,5 @@
 using EloVet.Domain.Entities;
+using EloVet.Application.Models;
 
 namespace EloVet.Application.Interfaces;
 
@@ -6,7 +7,7 @@ public interface IProntuarioRepository
 {
     Task<Prontuario> SalvarAsync(Prontuario prontuario);
 
-    Task<IEnumerable<Prontuario>> ListarAsync();
+    Task<PagedResult<Prontuario>> ListarAsync(ProntuarioQuery query);
 
     Task<Prontuario?> FindByIdAsync(string id);
 
