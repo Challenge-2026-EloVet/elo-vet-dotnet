@@ -1,5 +1,6 @@
 using EloVet.Application.Interfaces;
 using EloVet.Domain.Entities;
+using EloVet.Application.Models;
 using Microsoft.Extensions.Logging;
 
 namespace EloVet.Application.Services;
@@ -34,10 +35,16 @@ public class ProntuarioService : IProntuarioService
         return prontuarioSalvo;
     }
 
-    public async Task<IEnumerable<Prontuario>> ListarAsync()
+    public async Task<PagedResult<Prontuario>> ListarAsync(ProntuarioQuery query)
     {
-        _logger.LogInformation("Listando prontuarios");
-        return await _prontuarioRepository.ListarAsync();
+        query.Normalize();
+
+        _logger.LogInformation(
+            "Listando prontuarios paginados. Pagina {PageNumber}, tamanho {PageSize}",
+            query.PageNumber,
+            query.PageSize);
+
+        return await _prontuarioRepository.ListarAsync(query);
     }
 
     public async Task<Prontuario?> FindByIdAsync(string id)
