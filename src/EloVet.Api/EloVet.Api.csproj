@@ -20,4 +20,12 @@
     <ProjectReference Include="..\EloVet.Infrastructure\EloVet.Infrastructure.csproj" />
   </ItemGroup>
 
+  <Target Name="StartMongoContainer"
+          BeforeTargets="Build"
+          Condition="'$(Configuration)' == 'Debug' And '$(SkipMongoContainer)' != 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Message Importance="high" Text="Subindo container do MongoDB via Docker Compose..." />
+    <Exec Command="docker compose -f &quot;$(MSBuildThisFileDirectory)..\..\docker-compose.yml&quot; up -d --wait"
+          ContinueOnError="true" />
+  </Target>
+
 </Project>

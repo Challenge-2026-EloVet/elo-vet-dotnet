@@ -426,10 +426,15 @@ Para executar a API, é necessário possuir:
 
 ### Configuração do MongoDB
 
-A conexão com o MongoDB é configurada através da variável de ambiente:
+A configuração do MongoDB pode ser definida através das seguintes variáveis de ambiente:
 
 ```bash
-export MongoDb__ConnectionString="SUA_CONNECTION_STRING"
+export PROJECT_NAME=elo-vet
+export MONGO_USERNAME=admin
+export MONGO_PASSWORD=admin123
+export MONGO_DATABASE=elo-vet
+
+export MongoDb__ConnectionString="mongodb://admin:admin123@localhost:27017/elo-vet?authSource=admin"
 ```
 
 O nome do banco utilizado pela aplicação é configurado em `appsettings.json`.
