@@ -112,6 +112,29 @@ A API de prontuários disponibiliza os seguintes endpoints:
 | `PUT`    | `/api/Prontuario/{id}`        | Atualiza um prontuário             |
 | `DELETE` | `/api/Prontuario/{id}`        | Exclui um prontuário               |
 
+### Paginação, filtros e ordenação
+
+O endpoint de listagem aceita paginação, filtros pelos dados do pet e ordenação:
+
+```http
+GET /api/Prontuario?pageNumber=1&pageSize=10&petName=Thor&species=Canino&sortBy=weight&ascending=false
+```
+
+Parâmetros disponíveis:
+
+* `pageNumber`: número da página, iniciando em `1`;
+* `pageSize`: quantidade de itens por página, limitada a `50`;
+* `petId`: filtra pelo ID do pet;
+* `petName`: filtra pelo nome do pet;
+* `species`: filtra pela espécie;
+* `breed`: filtra pela raça;
+* `sex`: filtra pelo sexo;
+* `isCastrado`: filtra por `true` ou `false`;
+* `sortBy`: `petName`, `species`, `breed`, `sex`, `weight`, `birthDate` ou `id`;
+* `ascending`: define se a ordenação é crescente ou decrescente.
+
+A resposta contém os itens da página e os metadados `pageNumber`, `pageSize`, `totalPages` e `totalRecords`.
+
 ### Criar prontuário
 
 **Endpoint:**
