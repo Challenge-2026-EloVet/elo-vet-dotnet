@@ -1,4 +1,5 @@
 using EloVet.Application.Interfaces;
+using EloVet.Application.Models;
 using EloVet.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -48,12 +49,12 @@ public class ProntuarioController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ListarAsync()
+    public async Task<IActionResult> ListarAsync([FromQuery] ProntuarioQuery? query = null)
     {
         _logger.LogInformation(
             "Recebida solicitação para listar prontuarios");
 
-        var prontuarios = await _prontuarioService.ListarAsync();
+        var prontuarios = await _prontuarioService.ListarAsync(query ?? new ProntuarioQuery());
 
         return Ok(prontuarios);
     }
