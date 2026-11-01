@@ -39,18 +39,18 @@ EloVet.Domain
 src/
 ├── EloVet.Api/
 │   ├── Controllers/
-│   ├── Health/
-│   ├── Middleware/
+│   ├── Mapping/
+│   ├── Models/
+│   │   └── Prontuario/
 │   └── Program.cs
 │
 ├── EloVet.Application/
-│   ├── DTOs/
 │   ├── Interfaces/
+│   ├── Models/
 │   └── Services/
 │
 ├── EloVet.Domain/
-│   ├── Entities/
-│   └── ValueObjects/
+│   └── Entities/
 │
 └── EloVet.Infrastructure/
     ├── Mongo/
@@ -68,6 +68,82 @@ tests/
     ├── FactoryFixture/
     └── Integration/
 ```
+
+    ### Separação entre domínio, API e mapeamento
+
+    As entidades de `EloVet.Domain` representam o negócio veterinário e não conhecem HTTP, JSON, rotas ou HATEOAS. Por isso, `Prontuario`, `Pet`, `Consulta`, `Exame` e `Vacina` não são usados diretamente como entrada ou saída do controller.
+
+    Os modelos da API representam o contrato HTTP:
+
+    ```text
+    EloVet.Api/Models/Prontuario/
+    ├── ProntuarioRequest.cs
+    ├── ProntuarioResponse.cs
+    ├── PetRequest.cs
+    ├── PetResponse.cs
+    ├── ConsultaRequest.cs
+    ├── ConsultaResponse.cs
+    ├── ExameRequest.cs
+    ├── ExameResponse.cs
+    ├── VacinaRequest.cs
+    ├── VacinaResponse.cs
+    └── SoapResponse.cs
+    ```
+
+    O `ProntuarioRequest` é usado tanto no `POST` quanto no `PUT`. No `POST`, o `id` normalmente não é enviado; no `PUT`, ele pode ser validado contra o `id` da rota.
+
+    O `IProntuarioMapper` e o `ProntuarioMapper`, em `EloVet.Api/Mapping`, fazem a conversão entre o contrato HTTP e o domínio:
+
+    ```text
+    HTTP JSON
+       ↓
+    ProntuarioRequest
+       ↓ IProntuarioMapper
+    Prontuario (Domain)
+       ↓ Service e Repository
+    MongoDB
+    ```
+
+    Na resposta, o fluxo é invertido:
+
+    ```text
+    Prontuario (Domain)
+       ↓ IProntuarioMapper
+    ProntuarioResponse
+       ↓ HateoasResource<T>
+    HTTP JSON
+    ```
+
+    Essa divisão segue o princípio da responsabilidade única: o controller cuida de HTTP e HATEOAS, o mapper cuida de conversões, o Application coordena os casos de uso, o Domain representa o negócio e o Infrastructure acessa o MongoDB. O controller depende de `IProntuarioMapper`, e não diretamente de sua implementação, aplicando também o princípio da inversão de dependência.
+
+    Os modelos de HATEOAS (`LinkDto`, `HateoasResource<T>` e `PagedResponse<T>`) permanecem na API porque descrevem URLs, métodos HTTP e o formato da resposta web.
+
+    ### Ordem sugerida dos commits
+
+    Os commits podem ser organizados em mudanças pequenas e independentes:
+
+    1. `feat: add pagination query and result models`
+      - adiciona `ProntuarioQuery` e `PagedResult<T>`;
+      - atualiza os contratos da Application.
+    2. `feat: implement MongoDB filtering sorting and pagination`
+      - implementa filtros, ordenação, `CountDocuments`, `Skip` e `Limit` no repository.
+    3. `feat: expose paginated prontuario listing`
+      - conecta a paginação ao controller e documenta os parâmetros básicos.
+    4. `test: cover paginated prontuario listing`
+      - atualiza testes unitários e de integração da listagem.
+    5. `feat: add generic HATEOAS response models`
+      - adiciona `LinkDto`, `HateoasResource<T>` e `PagedResponse<T>`.
+    6. `feat: add HATEOAS links to prontuario endpoints`
+      - adiciona rotas nomeadas, links de recurso e links de navegação.
+    7. `feat: add API request and response DTOs`
+      - adiciona `ProntuarioRequest`, `ProntuarioResponse` e os DTOs aninhados.
+    8. `refactor: extract API to domain mapping`
+      - adiciona `IProntuarioMapper` e `ProntuarioMapper`;
+      - remove o mapeamento do controller.
+    9. `test: update API contract tests`
+      - adapta os testes para os DTOs e respostas HATEOAS.
+    10. `docs: document API boundaries and HATEOAS`
+       - registra a separação de responsabilidades e o fluxo de mapeamento.
 
 ## Tecnologias Utilizadas
 
@@ -134,6 +210,43 @@ Parâmetros disponíveis:
 * `ascending`: define se a ordenação é crescente ou decrescente.
 
 A resposta contém os itens da página e os metadados `pageNumber`, `pageSize`, `totalPages` e `totalRecords`.
+
+### HATEOAS
+
+As respostas de consulta incluem links que orientam as ações disponíveis para cada recurso.
+
+Exemplo de recurso:
+
+```json
+{
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "pet": {
+      "id": "pet-001",
+      "nome": "Thor"
+    }
+  },
+  "links": [
+    {
+      "href": "/api/Prontuario/507f1f77bcf86cd799439011",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "/api/Prontuario/507f1f77bcf86cd799439011",
+      "rel": "update",
+      "method": "PUT"
+    },
+    {
+      "href": "/api/Prontuario/507f1f77bcf86cd799439011",
+      "rel": "delete",
+      "method": "DELETE"
+    }
+  ]
+}
+```
+
+O endpoint de listagem também retorna links `self`, `next` e `previous` para navegação entre páginas. Os modelos genéricos `LinkDto`, `HateoasResource<T>` e `PagedResponse<T>` ficam na camada da API e podem ser reutilizados por outros endpoints.
 
 ### Criar prontuário
 
