@@ -2,6 +2,7 @@ using EloVet.Infrastructure.Mongo;
 using EloVet.Infrastructure.Diagnostics;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Services;
+using EloVet.Api.Mapping;
 using EloVet.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -27,6 +28,7 @@ builder.Services.AddControllers();
 //Service e Repository
 builder.Services.AddScoped<IProntuarioService, ProntuarioService>();
 builder.Services.AddScoped<IProntuarioRepository, ProntuarioRepository>();
+builder.Services.AddScoped<IProntuarioMapper, ProntuarioMapper>();
 
 //Configuração do MongoDB
 builder.Services.AddMongoDb(builder.Configuration);
