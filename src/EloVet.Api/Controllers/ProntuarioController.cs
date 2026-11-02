@@ -5,12 +5,14 @@ using EloVet.Api.Mapping;
 using EloVet.Domain.Entities;
 using EloVet.Api.Models.Prontuario;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 
 namespace EloVet.Controllers.ProntuarioController;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ProntuarioController : ControllerBase
 {
