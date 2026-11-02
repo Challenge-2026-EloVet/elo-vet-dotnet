@@ -9,14 +9,24 @@ using System.Net.Http.Json;
 namespace EloVet.IntegrationTests.Integration;
 
 [Collection("ApiCollection")]
-public class ProntuarioControllerIntegrationTests
+public class ProntuarioControllerIntegrationTests : IAsyncLifetime
 {
-    private readonly HttpClient _client;
+    private HttpClient _client = null!;
 
     public ProntuarioControllerIntegrationTests(ApiFactoryFixture factory)
     {
         _client = factory.CreateClient();
+        Factory = factory;
     }
+
+    private ApiFactoryFixture Factory { get; }
+
+    public async Task InitializeAsync()
+    {
+        _client = await Factory.CreateAuthenticatedClientAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task CriarProntuario_DadosValidos_PermiteConsultarProntuarioCriado()
