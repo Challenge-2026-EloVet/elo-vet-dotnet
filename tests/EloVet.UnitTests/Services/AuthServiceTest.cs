@@ -11,13 +11,15 @@ public class AuthServiceTests
 {
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
+    private readonly Mock<ILogger<AuthService>> _logger = new();
     private readonly AuthService _service;
 
     public AuthServiceTests()
     {
         _service = new AuthService(
             _userRepository.Object,
-            _passwordHasher.Object);
+            _passwordHasher.Object,
+            _logger.Object);
     }
 
     [Fact]

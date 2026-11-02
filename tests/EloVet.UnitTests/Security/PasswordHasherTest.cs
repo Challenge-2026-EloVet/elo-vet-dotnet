@@ -1,10 +1,12 @@
 using EloVet.Infrastructure.Security;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace EloVet.UnitTests.Security;
 
 public class PasswordHasherTests
 {
-    private readonly PasswordHasher _hasher = new();
+    private readonly PasswordHasher _hasher = new(Mock.Of<ILogger<PasswordHasher>>());
 
     [Fact]
     public void Hash_SenhaValida_GeraHashComFormatoEsperado()

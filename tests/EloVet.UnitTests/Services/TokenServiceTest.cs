@@ -1,5 +1,7 @@
 using EloVet.Api.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace EloVet.UnitTests.Services;
 
@@ -8,7 +10,7 @@ public class TokenServiceTests
     [Fact]
     public void GenerateToken_ConfiguracaoValida_GeraToken()
     {
-        var service = new TokenService(CreateConfiguration());
+        var service = new TokenService(CreateConfiguration(), Mock.Of<ILogger<TokenService>>());
 
         var token = service.GenerateToken("user");
 
@@ -19,7 +21,9 @@ public class TokenServiceTests
     [Fact]
     public void GenerateToken_SemChave_LancaExcecao()
     {
-        var service = new TokenService(new ConfigurationBuilder().Build());
+        var service = new TokenService(
+            new ConfigurationBuilder().Build(),
+            Mock.Of<ILogger<TokenService>>());
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             service.GenerateToken("user"));
@@ -36,7 +40,7 @@ public class TokenServiceTests
                 ["Jwt:Key"] = "   "
             })
             .Build();
-        var service = new TokenService(configuration);
+        var service = new TokenService(configuration, Mock.Of<ILogger<TokenService>>());
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             service.GenerateToken("user"));
@@ -55,7 +59,7 @@ public class TokenServiceTests
                 ["Jwt:Key"] = "short-key"
             })
             .Build();
-        var service = new TokenService(configuration);
+        var service = new TokenService(configuration, Mock.Of<ILogger<TokenService>>());
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             service.GenerateToken("user"));

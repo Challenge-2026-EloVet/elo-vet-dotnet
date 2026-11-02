@@ -5,6 +5,7 @@ using EloVet.Application.Interfaces;
 using EloVet.Application.Models;
 using EloVet.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace EloVet.UnitTests.Controllers;
@@ -13,13 +14,15 @@ public class AuthControllerTests
 {
     private readonly Mock<IAuthService> _authService = new();
     private readonly Mock<ITokenService> _tokenService = new();
+    private readonly Mock<ILogger<AuthController>> _logger = new();
     private readonly AuthController _controller;
 
     public AuthControllerTests()
     {
         _controller = new AuthController(
             _authService.Object,
-            _tokenService.Object);
+            _tokenService.Object,
+            _logger.Object);
     }
 
     [Fact]
