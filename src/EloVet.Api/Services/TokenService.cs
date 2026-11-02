@@ -18,6 +18,19 @@ public class TokenService : ITokenService
     {
         var key = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("Jwt:Key não configurada.");
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidOperationException(
+                "Jwt:Key está vazia. Configure uma chave secreta para gerar o token.");
+        }
+
+        if (key.Length < 32)
+        {
+            throw new InvalidOperationException(
+                "Jwt:Key deve possuir pelo menos 32 caracteres.");
+        }
+
         var issuer = _configuration["Jwt:Issuer"]
             ?? throw new InvalidOperationException("Jwt:Issuer não configurado.");
         var audience = _configuration["Jwt:Audience"]
