@@ -788,3 +788,18 @@ MongoDB
 ```
 
 Dessa maneira, os testes ajudam a identificar problemas que não seriam encontrados ao testar cada classe isoladamente, como falhas na comunicação com o banco ou na integração entre as camadas.
+
+### Relatório de cobertura de testes
+
+O projeto possui um script `coverage.sh` para automatizar a execução dos testes e a geração do relatório de cobertura.
+
+Para executar, utilize o seguinte comando na raiz do projeto:
+
+```bash
+chmod +x coverage.sh
+./coverage.sh
+```
+
+O script realiza a limpeza dos resultados anteriores, executa os testes unitários e de integração, coleta a cobertura de código e gera um relatório HTML utilizando o ReportGenerator.
+
+O relatório é aberto automaticamente no navegador e também fica disponível em `coveragereport/index.html`.
