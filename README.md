@@ -560,30 +560,94 @@ Para executar a API, é necessário possuir:
 * .NET 10 SDK;
 * acesso ao MongoDB configurado para o projeto.
 
-### Configuração do MongoDB
+### Autenticação JWT
 
-A configuração do MongoDB pode ser definida através das seguintes variáveis de ambiente:
+A API utiliza JWT sem roles. O cadastro e o login são públicos; os endpoints de prontuário exigem um token Bearer válido.
+
+### Variáveis de ambiente
+
+Defina todas as variáveis abaixo antes de iniciar a API. As variáveis com `__` representam seções de configuração do .NET, por exemplo, `Jwt__Key` corresponde a `Jwt:Key`.
+
+#### Bash, macOS e Linux
+
+Gere uma chave JWT para o ambiente local:
+
+```bash
+export Jwt__Key="$(openssl rand -base64 32)"
+```
+
+Configure as variáveis do MongoDB e do JWT:
 
 ```bash
 export PROJECT_NAME=elo-vet
 export MONGO_USERNAME=admin
 export MONGO_PASSWORD=admin123
 export MONGO_DATABASE=elo-vet
-
 export MongoDb__ConnectionString="mongodb://admin:admin123@localhost:27017/elo-vet?authSource=admin"
+
+export Jwt__Issuer="EloVet.Api"
+export Jwt__Audience="EloVet.Client"
+export Jwt__ExpirationInMinutes=120
 ```
 
-O nome do banco utilizado pela aplicação é configurado em `appsettings.json`.
+#### PowerShell, Windows
 
-Exemplo:
+```powershell
+$env:PROJECT_NAME = "elo-vet"
+$env:MONGO_USERNAME = "admin"
+$env:MONGO_PASSWORD = "admin123"
+$env:MONGO_DATABASE = "elo-vet"
+$env:MongoDb__ConnectionString = "mongodb://admin:admin123@localhost:27017/elo-vet?authSource=admin"
+
+$env:Jwt__Key = [Guid]::NewGuid().ToString("N") + [Guid]::NewGuid().ToString("N")
+$env:Jwt__Issuer = "EloVet.Api"
+$env:Jwt__Audience = "EloVet.Client"
+$env:Jwt__ExpirationInMinutes = "120"
+```
+
+O comando do PowerShell gera uma chave aleatória com 64 caracteres. A chave de desenvolvimento existente em `appsettings.Development.json` pode ser usada localmente, mas não deve ser utilizada em produção.
+
+As variáveis definidas no terminal valem apenas para a sessão atual. Para manter a configuração no Windows, use, por exemplo:
+
+```powershell
+[Environment]::SetEnvironmentVariable("Jwt__Key", "CHAVE_GERADA_AQUI", "User")
+```
+
+Cadastre um usuário:
+
+```http
+POST /api/Auth/register
+Content-Type: application/json
+```
 
 ```json
 {
-  "MongoDb": {
-    "DatabaseName": "elo-vet"
-  }
+  "username": "admin",
+  "password": "admin123"
 }
 ```
+
+Faça login para obter o token:
+
+```http
+POST /api/Auth/signin
+Content-Type: application/json
+```
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+Use o valor retornado em `token` no header das requisições protegidas:
+
+```http
+Authorization: Bearer SEU_TOKEN
+```
+
+As credenciais são armazenadas na collection `Users` do mesmo banco MongoDB dos prontuários. A senha não é armazenada em texto puro; somente o hash com salt é persistido.
 
 ### Restaurar dependências
 
