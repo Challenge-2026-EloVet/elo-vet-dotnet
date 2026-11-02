@@ -2,16 +2,21 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 
 namespace EloVet.Api.Services;
 
 public class TokenService : ITokenService
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<TokenService> _logger;
 
-    public TokenService(IConfiguration configuration)
+    public TokenService(
+        IConfiguration configuration,
+        ILogger<TokenService> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
 
     public string GenerateToken(string username)
@@ -21,12 +26,14 @@ public class TokenService : ITokenService
 
         if (string.IsNullOrWhiteSpace(key))
         {
+            _logger.LogError("Geração de token recusada porque Jwt:Key está vazia");
             throw new InvalidOperationException(
                 "Jwt:Key está vazia. Configure uma chave secreta para gerar o token.");
         }
 
         if (key.Length < 32)
         {
+            _logger.LogError("Geração de token recusada porque Jwt:Key é curta");
             throw new InvalidOperationException(
                 "Jwt:Key deve possuir pelo menos 32 caracteres.");
         }
@@ -51,6 +58,13 @@ public class TokenService : ITokenService
             expires: DateTime.UtcNow.AddMinutes(expiration),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var serializedToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+        _logger.LogInformation(
+            "Token JWT gerado para o usuário {Username} com expiração em {ExpirationInMinutes} minutos",
+            username,
+            expiration);
+
+        return serializedToken;
     }
 }
