@@ -1,4 +1,9 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
+using EloVet.Application.Models;
+using EloVet.Api.Models;
+using EloVet.Api.Mapping;
+using EloVet.Api.Models.Prontuario;
 using EloVet.Controllers.ProntuarioController;
 using EloVet.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +26,7 @@ public class ProntuarioControllerTests
 
         _controller = new ProntuarioController(
             _mockService.Object,
+            new ProntuarioMapper(),
             _mockLogger.Object);
     }
 
@@ -36,29 +42,42 @@ public class ProntuarioControllerTests
         // Arrange
         var prontuario = new Prontuario
         {
+            Id = "507f1f77bcf86cd799439011",
             Pet = new Pet
             {
                 Id = "pet-001"
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         _mockService
-            .Setup(s => s.SalvarAsync(prontuario))
+            .Setup(s => s.SalvarAsync(It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")))
             .ReturnsAsync(prontuario);
 
         // Act
-        var resultado = await _controller.SalvarAsync(prontuario);
+        var resultado = await _controller.SalvarAsync(request);
 
         // Assert
-        Assert.IsType<CreatedResult>(resultado);
+        var createdResult = Assert.IsType<CreatedAtRouteResult>(resultado);
+        Assert.Equal("FindProntuarioById", createdResult.RouteName);
+        Assert.IsType<HateoasResource<ProntuarioResponse>>(createdResult.Value);
 
         _mockService.Verify(
-            s => s.SalvarAsync(prontuario),
+            s => s.SalvarAsync(It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")),
             Times.Once);
     }
 
     [Fact]
-    public async Task SalvarAsync_ProntuarioJaExiste_RetornaConflict()
+    public async Task SalvarAsync_ProntuarioJaExiste_PropagaConflictException()
     {
         // Arrange
         var prontuario = new Prontuario
@@ -69,21 +88,30 @@ public class ProntuarioControllerTests
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         _mockService
-            .Setup(s => s.SalvarAsync(prontuario))
+            .Setup(s => s.SalvarAsync(It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")))
             .ThrowsAsync(
-                new InvalidOperationException(
+                new ConflictException(
                     "O pet já possui um prontuário."));
 
         // Act
-        var resultado = await _controller.SalvarAsync(prontuario);
+        var exception = await Assert.ThrowsAsync<ConflictException>(
+            () => _controller.SalvarAsync(request));
 
         // Assert
-        var conflictResult = Assert.IsType<ConflictObjectResult>(resultado);
-
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 409.
         Assert.Equal(
             "O pet já possui um prontuário.",
-            conflictResult.Value);
+            exception.Message);
     }
 
     // ============================================================
@@ -115,8 +143,13 @@ public class ProntuarioControllerTests
         };
 
         _mockService
-            .Setup(s => s.ListarAsync())
-            .ReturnsAsync(prontuarios);
+            .Setup(s => s.ListarAsync(It.IsAny<ProntuarioQuery>()))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                prontuarios,
+                1,
+                10,
+                1,
+                prontuarios.Count));
 
         // Act
         var resultado = await _controller.ListarAsync();
@@ -124,14 +157,16 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuariosRetornados =
-            Assert.IsAssignableFrom<IEnumerable<Prontuario>>(
-                okResult.Value);
+        var resposta =
+            Assert.IsType<PagedResponse<HateoasResource<ProntuarioResponse>>>(okResult.Value);
 
-        Assert.Equal(2, prontuariosRetornados.Count());
+        Assert.Equal(2, resposta.Items.Count());
+        Assert.Equal(1, resposta.PageNumber);
+        Assert.Equal(2, resposta.TotalRecords);
+        Assert.Contains(resposta.Links, link => link.Rel == "self");
 
         _mockService.Verify(
-            s => s.ListarAsync(),
+            s => s.ListarAsync(It.IsAny<ProntuarioQuery>()),
             Times.Once);
     }
 
@@ -140,8 +175,13 @@ public class ProntuarioControllerTests
     {
         // Arrange
         _mockService
-            .Setup(s => s.ListarAsync())
-            .ReturnsAsync(new List<Prontuario>());
+            .Setup(s => s.ListarAsync(It.IsAny<ProntuarioQuery>()))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                [],
+                1,
+                10,
+                0,
+                0));
 
         // Act
         var resultado = await _controller.ListarAsync();
@@ -149,11 +189,10 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuariosRetornados =
-            Assert.IsAssignableFrom<IEnumerable<Prontuario>>(
-                okResult.Value);
+        var resposta =
+            Assert.IsType<PagedResponse<HateoasResource<ProntuarioResponse>>>(okResult.Value);
 
-        Assert.Empty(prontuariosRetornados);
+        Assert.Empty(resposta.Items);
     }
 
     // ============================================================
@@ -175,6 +214,15 @@ public class ProntuarioControllerTests
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Id = prontuario.Id,
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         _mockService
             .Setup(s => s.FindByIdAsync(id))
             .ReturnsAsync(prontuario);
@@ -185,10 +233,13 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuarioRetornado =
-            Assert.IsType<Prontuario>(okResult.Value);
+        var resposta =
+            Assert.IsType<HateoasResource<ProntuarioResponse>>(okResult.Value);
 
-        Assert.Equal(id, prontuarioRetornado.Id);
+        Assert.Equal(id, resposta.Data.Id);
+        Assert.Contains(resposta.Links, link => link.Rel == "self");
+        Assert.Contains(resposta.Links, link => link.Rel == "update");
+        Assert.Contains(resposta.Links, link => link.Rel == "delete");
 
         _mockService.Verify(
             s => s.FindByIdAsync(id),
@@ -245,10 +296,11 @@ public class ProntuarioControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuarioRetornado =
-            Assert.IsType<Prontuario>(okResult.Value);
+        var resposta =
+            Assert.IsType<HateoasResource<ProntuarioResponse>>(okResult.Value);
 
-        Assert.Equal(petId, prontuarioRetornado.Pet.Id);
+        Assert.Equal(petId, resposta.Data.Pet.Id);
+        Assert.Contains(resposta.Links, link => link.Rel == "self");
 
         _mockService.Verify(
             s => s.FindByPetIdAsync(petId),
@@ -295,29 +347,43 @@ public class ProntuarioControllerTests
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Id = prontuario.Id,
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         _mockService
-            .Setup(s => s.EditarAsync(id, prontuario))
+            .Setup(s => s.EditarAsync(id, It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")))
             .ReturnsAsync(prontuario);
 
         // Act
         var resultado =
-            await _controller.EditarAsync(id, prontuario);
+            await _controller.EditarAsync(id, request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(resultado);
 
-        var prontuarioRetornado =
-            Assert.IsType<Prontuario>(okResult.Value);
+        var resposta =
+            Assert.IsType<HateoasResource<ProntuarioResponse>>(okResult.Value);
 
-        Assert.Equal(id, prontuarioRetornado.Id);
+        Assert.Equal(id, resposta.Data.Id);
+        Assert.Contains(resposta.Links, link => link.Rel == "self");
+        Assert.Contains(resposta.Links, link => link.Rel == "update");
+        Assert.Contains(resposta.Links, link => link.Rel == "delete");
 
         _mockService.Verify(
-            s => s.EditarAsync(id, prontuario),
+            s => s.EditarAsync(id, It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")),
             Times.Once);
     }
 
     [Fact]
-    public async Task EditarAsync_IdDaRotaDiferenteDoBody_RetornaBadRequest()
+    public async Task EditarAsync_IdDaRotaDiferenteDoBody_LancaInvalidInputException()
     {
         // Arrange
         var idDaRota = "507f1f77bcf86cd799439011";
@@ -331,17 +397,24 @@ public class ProntuarioControllerTests
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Id = "507f1f77bcf86cd799439012",
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         // Act
-        var resultado =
-            await _controller.EditarAsync(idDaRota, prontuario);
+        var exception = await Assert.ThrowsAsync<InvalidInputException>(
+            () => _controller.EditarAsync(idDaRota, request));
 
         // Assert
-        var badRequestResult =
-            Assert.IsType<BadRequestObjectResult>(resultado);
-
+        // O GlobalExceptionHandler converte a exceção em 400.
         Assert.Equal(
             "O id não corresponde ao id do prontuário no body.",
-            badRequestResult.Value);
+            exception.Message);
 
         _mockService.Verify(
             s => s.EditarAsync(
@@ -364,19 +437,29 @@ public class ProntuarioControllerTests
             }
         };
 
+        var request = new ProntuarioRequest
+        {
+            Pet = new PetRequest
+            {
+                Id = prontuario.Pet.Id
+            }
+        };
+
         _mockService
-            .Setup(s => s.EditarAsync(id, prontuario))
+            .Setup(s => s.EditarAsync(id, It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")))
             .ReturnsAsync((Prontuario?)null);
 
         // Act
         var resultado =
-            await _controller.EditarAsync(id, prontuario);
+            await _controller.EditarAsync(id, request);
 
         // Assert
         Assert.IsType<NotFoundResult>(resultado);
 
         _mockService.Verify(
-            s => s.EditarAsync(id, prontuario),
+            s => s.EditarAsync(id, It.Is<Prontuario>(value =>
+                value.Pet.Id == "pet-001")),
             Times.Once);
     }
 

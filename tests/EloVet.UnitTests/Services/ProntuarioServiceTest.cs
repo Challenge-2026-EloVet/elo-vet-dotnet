@@ -1,4 +1,6 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
+using EloVet.Application.Models;
 using EloVet.Application.Services;
 using EloVet.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -79,7 +81,7 @@ public class ProntuarioServiceTests
             .ReturnsAsync(prontuarioExistente);
 
         // Act
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<ConflictException>(
             () => _service.SalvarAsync(prontuario));
 
         // Assert
@@ -121,18 +123,37 @@ public class ProntuarioServiceTests
             }
         };
 
+        var query = new ProntuarioQuery
+        {
+            PageNumber = 0,
+            PageSize = 100,
+            SortBy = " Species "
+        };
+
         _mockRepository
-            .Setup(r => r.ListarAsync())
-            .ReturnsAsync(prontuarios);
+            .Setup(r => r.ListarAsync(It.Is<ProntuarioQuery>(receivedQuery =>
+                receivedQuery.PageNumber == 1 &&
+                receivedQuery.PageSize == 50 &&
+                receivedQuery.SortBy == "species")))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                prontuarios,
+                1,
+                10,
+                1,
+                prontuarios.Count));
 
         // Act
-        var resultado = await _service.ListarAsync();
+        var resultado = await _service.ListarAsync(query);
 
         // Assert
-        Assert.Equal(2, resultado.Count());
+        Assert.Equal(2, resultado.Items.Count());
+        Assert.Equal(2, resultado.TotalRecords);
 
         _mockRepository.Verify(
-            r => r.ListarAsync(),
+            r => r.ListarAsync(It.Is<ProntuarioQuery>(receivedQuery =>
+                receivedQuery.PageNumber == 1 &&
+                receivedQuery.PageSize == 50 &&
+                receivedQuery.SortBy == "species")),
             Times.Once);
     }
 
@@ -140,18 +161,25 @@ public class ProntuarioServiceTests
     public async Task ListarAsync_NaoExistemProntuarios_RetornaListaVazia()
     {
         // Arrange
+        var query = new ProntuarioQuery();
+
         _mockRepository
-            .Setup(r => r.ListarAsync())
-            .ReturnsAsync(new List<Prontuario>());
+            .Setup(r => r.ListarAsync(query))
+            .ReturnsAsync(new PagedResult<Prontuario>(
+                [],
+                1,
+                10,
+                0,
+                0));
 
         // Act
-        var resultado = await _service.ListarAsync();
+        var resultado = await _service.ListarAsync(query);
 
         // Assert
-        Assert.Empty(resultado);
+        Assert.Empty(resultado.Items);
 
         _mockRepository.Verify(
-            r => r.ListarAsync(),
+            r => r.ListarAsync(query),
             Times.Once);
     }
 

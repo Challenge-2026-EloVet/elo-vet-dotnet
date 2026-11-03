@@ -1,4 +1,7 @@
 using EloVet.Domain.Entities;
+using EloVet.Application.Models;
+using EloVet.Api.Models;
+using EloVet.Api.Models.Prontuario;
 using EloVet.IntegrationTests.FactoryFixture;
 using System.Net;
 using System.Net.Http.Json;
@@ -6,14 +9,24 @@ using System.Net.Http.Json;
 namespace EloVet.IntegrationTests.Integration;
 
 [Collection("ApiCollection")]
-public class ProntuarioControllerIntegrationTests
+public class ProntuarioControllerIntegrationTests : IAsyncLifetime
 {
-    private readonly HttpClient _client;
+    private HttpClient _client = null!;
 
     public ProntuarioControllerIntegrationTests(ApiFactoryFixture factory)
     {
         _client = factory.CreateClient();
+        Factory = factory;
     }
+
+    private ApiFactoryFixture Factory { get; }
+
+    public async Task InitializeAsync()
+    {
+        _client = await Factory.CreateAuthenticatedClientAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task CriarProntuario_DadosValidos_PermiteConsultarProntuarioCriado()
@@ -43,7 +56,7 @@ public class ProntuarioControllerIntegrationTests
             $"/api/Prontuario/pet/{petId}");
 
         var prontuarioConsultado =
-            await getResponse.Content.ReadFromJsonAsync<Prontuario>();
+            await getResponse.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Assert
         // A criação e a consulta devem ser realizadas com sucesso.
@@ -54,7 +67,7 @@ public class ProntuarioControllerIntegrationTests
         Assert.NotNull(prontuarioConsultado);
         Assert.Equal(
             petId,
-            prontuarioConsultado.Pet.Id);
+            prontuarioConsultado.Data.Pet.Id);
     }
 
     [Fact]
@@ -121,8 +134,8 @@ public class ProntuarioControllerIntegrationTests
         var response = await _client.GetAsync(
             "/api/Prontuario");
 
-        var prontuarios =
-            await response.Content.ReadFromJsonAsync<List<Prontuario>>();
+        var resposta =
+            await response.Content.ReadFromJsonAsync<PagedResponse<HateoasResource<ProntuarioResponse>>>();
 
         // Assert
         // A consulta deve retornar sucesso e uma lista.
@@ -130,8 +143,8 @@ public class ProntuarioControllerIntegrationTests
             HttpStatusCode.OK,
             response.StatusCode);
 
-        Assert.NotNull(prontuarios);
-        Assert.NotEmpty(prontuarios);
+        Assert.NotNull(resposta);
+        Assert.NotEmpty(resposta.Items);
     }
 
     [Fact]
@@ -154,15 +167,15 @@ public class ProntuarioControllerIntegrationTests
             prontuario);
 
         var prontuarioCriado =
-            await postResponse.Content.ReadFromJsonAsync<Prontuario>();
+            await postResponse.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Act
         // Consulta o prontuário utilizando o ID gerado pelo MongoDB.
         var response = await _client.GetAsync(
-            $"/api/Prontuario/{prontuarioCriado!.Id}");
+            $"/api/Prontuario/{prontuarioCriado!.Data.Id}");
 
         var prontuarioConsultado =
-            await response.Content.ReadFromJsonAsync<Prontuario>();
+            await response.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Assert
         // A consulta deve retornar o prontuário criado.
@@ -172,8 +185,8 @@ public class ProntuarioControllerIntegrationTests
 
         Assert.NotNull(prontuarioConsultado);
         Assert.Equal(
-            prontuarioCriado.Id,
-            prontuarioConsultado.Id);
+            prontuarioCriado.Data.Id,
+            prontuarioConsultado.Data.Id);
     }
 
     [Fact]
@@ -224,7 +237,7 @@ public class ProntuarioControllerIntegrationTests
             $"/api/Prontuario/pet/{petId}");
 
         var prontuarioConsultado =
-            await response.Content.ReadFromJsonAsync<Prontuario>();
+            await response.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Assert
         // A API deve retornar o prontuário do Pet informado.
@@ -235,7 +248,7 @@ public class ProntuarioControllerIntegrationTests
         Assert.NotNull(prontuarioConsultado);
         Assert.Equal(
             petId,
-            prontuarioConsultado.Pet.Id);
+            prontuarioConsultado.Data.Pet.Id);
     }
 
     [Fact]
@@ -282,23 +295,23 @@ public class ProntuarioControllerIntegrationTests
             prontuario);
 
         var prontuarioCriado =
-            await postResponse.Content.ReadFromJsonAsync<Prontuario>();
+            await postResponse.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Cria uma nova versão do prontuário com os dados alterados.
-        prontuarioCriado!.Pet.Nome = "Pet Atualizado";
+        prontuarioCriado!.Data.Pet.Nome = "Pet Atualizado";
 
         // Act
         // Atualiza o prontuário através da API.
         var putResponse = await _client.PutAsJsonAsync(
-            $"/api/Prontuario/{prontuarioCriado.Id}",
-            prontuarioCriado);
+            $"/api/Prontuario/{prontuarioCriado.Data.Id}",
+            prontuarioCriado.Data);
 
         // Consulta novamente para confirmar a alteração.
         var getResponse = await _client.GetAsync(
-            $"/api/Prontuario/{prontuarioCriado.Id}");
+            $"/api/Prontuario/{prontuarioCriado.Data.Id}");
 
         var prontuarioAtualizado =
-            await getResponse.Content.ReadFromJsonAsync<Prontuario>();
+            await getResponse.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Assert
         // A atualização e a consulta devem ser realizadas com sucesso.
@@ -314,7 +327,7 @@ public class ProntuarioControllerIntegrationTests
         Assert.NotNull(prontuarioAtualizado);
         Assert.Equal(
             "Pet Atualizado",
-            prontuarioAtualizado.Pet.Nome);
+            prontuarioAtualizado.Data.Pet.Nome);
     }
 
     [Fact]
@@ -399,16 +412,16 @@ public class ProntuarioControllerIntegrationTests
             prontuario);
 
         var prontuarioCriado =
-            await postResponse.Content.ReadFromJsonAsync<Prontuario>();
+            await postResponse.Content.ReadFromJsonAsync<HateoasResource<ProntuarioResponse>>();
 
         // Act
         // Exclui o prontuário através da API.
         var deleteResponse = await _client.DeleteAsync(
-            $"/api/Prontuario/{prontuarioCriado!.Id}");
+            $"/api/Prontuario/{prontuarioCriado!.Data.Id}");
 
         // Consulta novamente para confirmar a exclusão.
         var getResponse = await _client.GetAsync(
-            $"/api/Prontuario/{prontuarioCriado.Id}");
+            $"/api/Prontuario/{prontuarioCriado.Data.Id}");
 
         // Assert
         // A exclusão deve ser concluída sem conteúdo na resposta.

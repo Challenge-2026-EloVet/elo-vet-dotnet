@@ -1,64 +1,80 @@
 using EloVet.Application.Interfaces;
+using EloVet.Application.Exceptions;
+using EloVet.Application.Models;
+using EloVet.Api.Models;
+using EloVet.Api.Mapping;
 using EloVet.Domain.Entities;
+using EloVet.Api.Models.Prontuario;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 
 namespace EloVet.Controllers.ProntuarioController;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ProntuarioController : ControllerBase
 {
     private readonly IProntuarioService _prontuarioService;
+    private readonly IProntuarioMapper _prontuarioMapper;
     private readonly ILogger<ProntuarioController> _logger;
 
     public ProntuarioController(
         IProntuarioService prontuarioService,
+        IProntuarioMapper prontuarioMapper,
         ILogger<ProntuarioController> logger)
     {
         _prontuarioService = prontuarioService;
+        _prontuarioMapper = prontuarioMapper;
         _logger = logger;
     }
 
     [HttpPost]
-    public async Task<IActionResult> SalvarAsync(Prontuario prontuario)
+    public async Task<IActionResult> SalvarAsync(ProntuarioRequest request)
     {
         _logger.LogInformation(
             "Recebida solicitação para cadastrar prontuário do pet {PetId}",
+            request.Pet.Id);
+
+        var prontuario = _prontuarioMapper.ToEntity(request);
+
+        // Pet que já possui prontuário gera ConflictException, convertida em 409 pelo GlobalExceptionHandler.
+        var prontuarioSalvo =
+            await _prontuarioService.SalvarAsync(prontuario);
+
+        _logger.LogInformation(
+            "Cadastro de prontuário concluido para o pet {PetId}",
             prontuario.Pet.Id);
 
-        try
-        {
-            var prontuarioSalvo =
-                await _prontuarioService.SalvarAsync(prontuario);
-
-            _logger.LogInformation(
-                "Cadastro de prontuário concluido para o pet {PetId}",
-                prontuario.Pet.Id);
-
-            return Created(
-            $"/api/Prontuario/{prontuarioSalvo.Id}",
-            prontuarioSalvo);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return Conflict(exception.Message);
-        }
+        return CreatedAtRoute(
+            "FindProntuarioById",
+            new { id = prontuarioSalvo.Id },
+            CreateResource(prontuarioSalvo));
     }
 
-    [HttpGet]
-    public async Task<IActionResult> ListarAsync()
+    [HttpGet(Name = "ListProntuarios")]
+    public async Task<IActionResult> ListarAsync([FromQuery] ProntuarioQuery? query = null)
     {
         _logger.LogInformation(
             "Recebida solicitação para listar prontuarios");
 
-        var prontuarios = await _prontuarioService.ListarAsync();
+        var normalizedQuery = query ?? new ProntuarioQuery();
+        var page = await _prontuarioService.ListarAsync(normalizedQuery);
+        var items = page.Items.Select(CreateResource).ToList();
+        var links = CreatePaginationLinks(normalizedQuery, page);
 
-        return Ok(prontuarios);
+        return Ok(new PagedResponse<HateoasResource<ProntuarioResponse>>(
+            items,
+            page.PageNumber,
+            page.PageSize,
+            page.TotalPages,
+            page.TotalRecords,
+            links));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id}", Name = "FindProntuarioById")]
     public async Task<IActionResult> FindByIdAsync(string id)
     {
         _logger.LogInformation(
@@ -71,7 +87,7 @@ public class ProntuarioController : ControllerBase
                 "Consulta de prontuario recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest("O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
         var prontuario = await _prontuarioService.FindByIdAsync(id);
@@ -81,10 +97,10 @@ public class ProntuarioController : ControllerBase
             return NotFound();
         }
 
-        return Ok(prontuario);
+        return Ok(CreateResource(prontuario));
     }
 
-    [HttpGet("pet/{petId}")]
+    [HttpGet("pet/{petId}", Name = "FindProntuarioByPetId")]
     public async Task<IActionResult> FindByPetIdAsync(string petId)
     {
         _logger.LogInformation(
@@ -102,13 +118,13 @@ public class ProntuarioController : ControllerBase
             return NotFound();
         }
 
-        return Ok(prontuario);
+        return Ok(CreateResource(prontuario));
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id}", Name = "EditProntuario")]
     public async Task<IActionResult> EditarAsync(
         string id,
-        [FromBody] Prontuario prontuario)
+        [FromBody] ProntuarioRequest request)
     {
         _logger.LogInformation(
             "Recebida solicitação para atualizar prontuario {ProntuarioId}",
@@ -120,20 +136,20 @@ public class ProntuarioController : ControllerBase
                 "Atualização recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest(
-                "O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
-        if (!string.IsNullOrWhiteSpace(prontuario.Id) && prontuario.Id != id)
+        if (!string.IsNullOrWhiteSpace(request.Id) && request.Id != id)
         {
             _logger.LogWarning(
                 "Atualização recusada porque o id da rota {ProntuarioId} nao corresponde ao id informado no body {BodyProntuarioId}",
                 id,
-                prontuario.Id);
+                request.Id);
 
-            return BadRequest("O id não corresponde ao id do prontuário no body.");
+            throw new InvalidInputException("O id não corresponde ao id do prontuário no body.");
         }
 
+        var prontuario = _prontuarioMapper.ToEntity(request);
         var prontuarioEditado =
             await _prontuarioService.EditarAsync(id, prontuario);
 
@@ -146,10 +162,10 @@ public class ProntuarioController : ControllerBase
             return NotFound();
         }
 
-        return Ok(prontuarioEditado);
+        return Ok(CreateResource(prontuarioEditado));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}", Name = "DeleteProntuario")]
     public async Task<IActionResult> ExcluirAsync(string id)
     {
         _logger.LogInformation(
@@ -162,8 +178,7 @@ public class ProntuarioController : ControllerBase
                 "Exclusão recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest(
-                "O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
         var prontuario = await _prontuarioService.FindByIdAsync(id);
@@ -185,4 +200,68 @@ public class ProntuarioController : ControllerBase
 
         return NoContent();
     }
+
+    private HateoasResource<ProntuarioResponse> CreateResource(Prontuario prontuario)
+    {
+        var id = prontuario.Id!;
+        var links = new List<LinkDto>
+        {
+            new(CreateLink("FindProntuarioById", new { id }, $"/api/Prontuario/{id}"), "self", "GET"),
+            new(CreateLink("EditProntuario", new { id }, $"/api/Prontuario/{id}"), "update", "PUT"),
+            new(CreateLink("DeleteProntuario", new { id }, $"/api/Prontuario/{id}"), "delete", "DELETE")
+        };
+
+        return new HateoasResource<ProntuarioResponse>(_prontuarioMapper.ToResponse(prontuario), links);
+    }
+
+    private IReadOnlyCollection<LinkDto> CreatePaginationLinks(
+        ProntuarioQuery query,
+        PagedResult<Prontuario> page)
+    {
+        var links = new List<LinkDto>
+        {
+            new(CreateLink("ListProntuarios", CreateQueryRouteValues(query, page.PageNumber), "/api/Prontuario"), "self", "GET")
+        };
+
+        if (page.PageNumber < page.TotalPages)
+        {
+            links.Add(new(
+                CreateLink("ListProntuarios", CreateQueryRouteValues(query, page.PageNumber + 1), "/api/Prontuario"),
+                "next",
+                "GET"));
+        }
+
+        if (page.PageNumber > 1)
+        {
+            links.Add(new(
+                CreateLink("ListProntuarios", CreateQueryRouteValues(query, page.PageNumber - 1), "/api/Prontuario"),
+                "previous",
+                "GET"));
+        }
+
+        return links;
+    }
+
+    private string CreateLink(string routeName, object routeValues, string fallback)
+    {
+        return Url?.Link(routeName, routeValues) ?? fallback;
+    }
+
+    private static object CreateQueryRouteValues(ProntuarioQuery query, int pageNumber)
+    {
+        return new
+        {
+            pageNumber,
+            pageSize = query.PageSize,
+            query.PetId,
+            query.PetName,
+            query.Species,
+            query.Breed,
+            query.Sex,
+            query.IsCastrado,
+            sortBy = query.SortBy,
+            ascending = query.Ascending
+        };
+    }
+
 }

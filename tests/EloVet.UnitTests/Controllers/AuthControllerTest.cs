@@ -1,0 +1,100 @@
+using EloVet.Application.Exceptions;
+using EloVet.Api.Controllers;
+using EloVet.Api.Models.Auth;
+using EloVet.Api.Services;
+using EloVet.Application.Interfaces;
+using EloVet.Application.Models;
+using EloVet.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace EloVet.UnitTests.Controllers;
+
+public class AuthControllerTests
+{
+    private readonly Mock<IAuthService> _authService = new();
+    private readonly Mock<ITokenService> _tokenService = new();
+    private readonly Mock<ILogger<AuthController>> _logger = new();
+    private readonly AuthController _controller;
+
+    public AuthControllerTests()
+    {
+        _controller = new AuthController(
+            _authService.Object,
+            _tokenService.Object,
+            _logger.Object);
+    }
+
+    [Fact]
+    public async Task Register_CredenciaisValidas_RetornaCreated()
+    {
+        var request = new AuthRequest { Username = "user", Password = "secret" };
+        _authService.Setup(service => service.RegisterAsync(
+                new AuthCredentials("user", "secret")))
+            .ReturnsAsync(new User { Id = "user-id", Username = "user" });
+
+        var result = await _controller.Register(request);
+
+        var created = Assert.IsType<CreatedResult>(result);
+        Assert.Equal("/api/Auth/users/user-id", created.Location);
+        Assert.Equal("user", created.Value!.GetType().GetProperty("Username")!.GetValue(created.Value));
+    }
+
+    [Fact]
+    public async Task Register_UsuarioDuplicado_PropagaConflictException()
+    {
+        _authService.Setup(service => service.RegisterAsync(It.IsAny<AuthCredentials>()))
+            .ThrowsAsync(new ConflictException("O usuário informado já existe."));
+
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 409.
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => _controller.Register(
+            new AuthRequest { Username = "user", Password = "secret" }));
+
+        Assert.Equal("O usuário informado já existe.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Register_CredenciaisInvalidas_PropagaInvalidInputException()
+    {
+        _authService.Setup(service => service.RegisterAsync(It.IsAny<AuthCredentials>()))
+            .ThrowsAsync(new InvalidInputException("Usuário e senha são obrigatórios."));
+
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 400.
+        var exception = await Assert.ThrowsAsync<InvalidInputException>(
+            () => _controller.Register(new AuthRequest()));
+
+        Assert.Equal("Usuário e senha são obrigatórios.", exception.Message);
+    }
+
+    [Fact]
+    public async Task SignIn_CredenciaisValidas_RetornaToken()
+    {
+        var user = new User { Username = "user" };
+        _authService.Setup(service => service.ValidateCredentialsAsync(
+                new AuthCredentials("user", "secret")))
+            .ReturnsAsync(user);
+        _tokenService.Setup(service => service.GenerateToken("user"))
+            .Returns("jwt-token");
+
+        var result = await _controller.SignIn(
+            new AuthRequest { Username = "user", Password = "secret" });
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("jwt-token", Assert.IsType<AuthResponse>(ok.Value).Token);
+        _tokenService.Verify(service => service.GenerateToken("user"), Times.Once);
+    }
+
+    [Fact]
+    public async Task SignIn_CredenciaisInvalidas_RetornaUnauthorized()
+    {
+        _authService.Setup(service => service.ValidateCredentialsAsync(It.IsAny<AuthCredentials>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await _controller.SignIn(
+            new AuthRequest { Username = "user", Password = "wrong" });
+
+        Assert.IsType<UnauthorizedResult>(result);
+        _tokenService.Verify(service => service.GenerateToken(It.IsAny<string>()), Times.Never);
+    }
+}

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
@@ -19,5 +20,13 @@
     <ProjectReference Include="..\EloVet.Application\EloVet.Application.csproj" />
     <ProjectReference Include="..\EloVet.Infrastructure\EloVet.Infrastructure.csproj" />
   </ItemGroup>
+
+  <Target Name="StartMongoContainer"
+          BeforeTargets="Build"
+          Condition="'$(Configuration)' == 'Debug' And '$(SkipMongoContainer)' != 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Message Importance="high" Text="Subindo container do MongoDB via Docker Compose..." />
+    <Exec Command="docker compose -f &quot;$(MSBuildThisFileDirectory)..\..\docker-compose.yml&quot; up -d --wait"
+          ContinueOnError="true" />
+  </Target>
 
 </Project>
