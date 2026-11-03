@@ -57,6 +57,7 @@ A estrutura principal da solução está organizada da seguinte forma:
 src/
 ├── EloVet.Api/
 │   ├── Controllers/
+│   ├── ExceptionHandling/
 │   ├── Mapping/
 │   ├── Models/
 │   │   ├── Auth/
@@ -65,6 +66,7 @@ src/
 │   └── Program.cs
 │
 ├── EloVet.Application/
+│   ├── Exceptions/
 │   ├── Interfaces/
 │   ├── Models/
 │   └── Services/
@@ -81,6 +83,7 @@ src/
 tests/
 ├── EloVet.UnitTests/
 │   ├── Controllers/
+│   ├── ExceptionHandling/
 │   ├── Security/
 │   └── Services/
 │
@@ -182,6 +185,7 @@ A EloVet API possui os seguintes recursos:
 - regra que impede mais de um prontuário para o mesmo pet;
 - validação entre o ID informado na rota e o ID enviado no corpo durante atualizações;
 - respostas HTTP específicas para recursos não encontrados;
+- tratamento global de exceções com respostas padronizadas em ProblemDetails (RFC 9457);
 - paginação, filtros e ordenação na listagem de prontuários;
 - links HATEOAS nas respostas;
 - Health Checks para liveness e readiness;
@@ -465,6 +469,37 @@ Depois da autorização, o Swagger enviará o token no cabeçalho `Authorization
 | `401 Unauthorized` | Token ausente ou inválido. |
 | `404 Not Found` | Recurso não encontrado. |
 | `409 Conflict` | Recurso duplicado ou pet que já possui prontuário. |
+| `500 Internal Server Error` | Erro inesperado. A resposta não expõe detalhes internos e traz o `traceId` para correlação com os logs. |
+| `503 Service Unavailable` | MongoDB indisponível ou sem resposta. |
+
+### Tratamento global de exceções
+
+Todos os erros da API seguem um formato único, o **ProblemDetails** (RFC 9457), com `Content-Type: application/problem+json`. Os controllers não tratam exceções: as regras de negócio lançam exceções da camada Application (`EloVet.Application/Exceptions`), e o `GlobalExceptionHandler` (`EloVet.Api/ExceptionHandling`) converte cada uma no status HTTP correspondente.
+
+| Exceção | Status | Quando ocorre |
+|---|---|---|
+| `InvalidInputException` | `400` | Id em formato inválido, id da rota diferente do body, usuário ou senha ausentes |
+| `ConflictException` | `409` | Pet que já possui prontuário, usuário já cadastrado |
+| `MongoException` / `TimeoutException` | `503` | MongoDB indisponível ou sem resposta |
+| Qualquer outra exceção | `500` | Erro inesperado |
+
+Os erros gerados pelo próprio ASP.NET Core seguem o mesmo padrão: corpo inválido (`400`, com a lista de campos), recurso não encontrado (`404`) e token ausente ou inválido (`401`).
+
+Exemplo de resposta:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Conflito",
+  "status": 409,
+  "detail": "O pet já possui um prontuário.",
+  "instance": "POST /api/Prontuario",
+  "traceId": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+}
+```
+
+- Erros `4xx` são registrados no log como `Warning`; erros `5xx`, como `Error`, com a exceção completa.
+- Em erros `500`, a mensagem interna da exceção nunca é enviada ao cliente. O `traceId` da resposta permite localizar o erro nos logs e nos traces.
 
 ## Autenticação JWT
 
