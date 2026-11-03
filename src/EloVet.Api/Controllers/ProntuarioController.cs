@@ -1,4 +1,5 @@
 using EloVet.Application.Interfaces;
+using EloVet.Application.Exceptions;
 using EloVet.Application.Models;
 using EloVet.Api.Models;
 using EloVet.Api.Mapping;
@@ -39,24 +40,18 @@ public class ProntuarioController : ControllerBase
 
         var prontuario = _prontuarioMapper.ToEntity(request);
 
-        try
-        {
-            var prontuarioSalvo =
-                await _prontuarioService.SalvarAsync(prontuario);
+        // Pet que já possui prontuário gera ConflictException, convertida em 409 pelo GlobalExceptionHandler.
+        var prontuarioSalvo =
+            await _prontuarioService.SalvarAsync(prontuario);
 
-            _logger.LogInformation(
-                "Cadastro de prontuário concluido para o pet {PetId}",
-                prontuario.Pet.Id);
+        _logger.LogInformation(
+            "Cadastro de prontuário concluido para o pet {PetId}",
+            prontuario.Pet.Id);
 
-            return CreatedAtRoute(
-                "FindProntuarioById",
-                new { id = prontuarioSalvo.Id },
-                CreateResource(prontuarioSalvo));
-        }
-        catch (InvalidOperationException exception)
-        {
-            return Conflict(exception.Message);
-        }
+        return CreatedAtRoute(
+            "FindProntuarioById",
+            new { id = prontuarioSalvo.Id },
+            CreateResource(prontuarioSalvo));
     }
 
     [HttpGet(Name = "ListProntuarios")]
@@ -92,7 +87,7 @@ public class ProntuarioController : ControllerBase
                 "Consulta de prontuario recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest("O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
         var prontuario = await _prontuarioService.FindByIdAsync(id);
@@ -141,8 +136,7 @@ public class ProntuarioController : ControllerBase
                 "Atualização recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest(
-                "O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.Id) && request.Id != id)
@@ -152,7 +146,7 @@ public class ProntuarioController : ControllerBase
                 id,
                 request.Id);
 
-            return BadRequest("O id não corresponde ao id do prontuário no body.");
+            throw new InvalidInputException("O id não corresponde ao id do prontuário no body.");
         }
 
         var prontuario = _prontuarioMapper.ToEntity(request);
@@ -184,8 +178,7 @@ public class ProntuarioController : ControllerBase
                 "Exclusão recusada porque o id {ProntuarioId} é inválido",
                 id);
 
-            return BadRequest(
-                "O id do prontuário informado não possui um formato válido.");
+            throw new InvalidInputException("O id do prontuário informado não possui um formato válido.");
         }
 
         var prontuario = await _prontuarioService.FindByIdAsync(id);

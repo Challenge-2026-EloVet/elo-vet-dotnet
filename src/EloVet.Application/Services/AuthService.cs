@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Models;
 using EloVet.Domain.Entities;
@@ -35,7 +36,7 @@ public class AuthService : IAuthService
                 "Cadastro do usuário {Username} recusado por credenciais obrigatórias ausentes",
                 username);
 
-            throw new ArgumentException("Usuário e senha são obrigatórios.");
+            throw new InvalidInputException("Usuário e senha são obrigatórios.");
         }
 
         if (await _userRepository.FindByUsernameAsync(username) is not null)
@@ -44,7 +45,7 @@ public class AuthService : IAuthService
                 "Cadastro recusado porque o usuário {Username} já existe",
                 username);
 
-            throw new InvalidOperationException("O usuário informado já existe.");
+            throw new ConflictException("O usuário informado já existe.");
         }
 
         var user = await _userRepository.CreateAsync(new User

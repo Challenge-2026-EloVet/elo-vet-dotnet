@@ -33,36 +33,15 @@ public class AuthController : ControllerBase
         _logger.LogInformation(
             "Recebida solicitação para cadastrar usuário {Username}",
             request.Username);
+       
+        var user = await _authService.RegisterAsync(
+            new AuthCredentials(request.Username, request.Password));
 
-        try
-        {
-            var user = await _authService.RegisterAsync(
-                new AuthCredentials(request.Username, request.Password));
+        _logger.LogInformation(
+            "Cadastro do usuário {Username} concluído",
+            user.Username);
 
-            _logger.LogInformation(
-                "Cadastro do usuário {Username} concluído",
-                user.Username);
-
-            return Created($"/api/Auth/users/{user.Id}", new { user.Username });
-        }
-        catch (ArgumentException exception)
-        {
-            _logger.LogWarning(
-                "Cadastro do usuário {Username} recusado: {Reason}",
-                request.Username,
-                exception.Message);
-
-            return BadRequest(exception.Message);
-        }
-        catch (InvalidOperationException exception)
-        {
-            _logger.LogWarning(
-                "Cadastro do usuário {Username} recusado: {Reason}",
-                request.Username,
-                exception.Message);
-
-            return Conflict(exception.Message);
-        }
+        return Created($"/api/Auth/users/{user.Id}", new { user.Username });
     }
 
     [HttpPost("signin")]

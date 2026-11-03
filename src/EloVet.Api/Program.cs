@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
 using Serilog;
+using EloVet.Api.ExceptionHandling;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,16 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 });
 
 builder.Services.AddControllers();
+
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Instance ??=
+            $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+    };
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key não configurada.");
@@ -104,6 +115,10 @@ var app = builder.Build();
 
 // Configura o middleware que mostra os logs de requisições HTTP no console, incluindo informações como método, caminho, status e tempo de resposta.
 app.UseSerilogRequestLogging();
+
+app.UseExceptionHandler();
+
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {

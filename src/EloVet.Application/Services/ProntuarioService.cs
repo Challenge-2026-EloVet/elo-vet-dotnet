@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
 using EloVet.Domain.Entities;
 using EloVet.Application.Models;
@@ -25,7 +26,7 @@ public class ProntuarioService : IProntuarioService
         if (existente is not null)
         {
             _logger.LogWarning("Cadastro recusado porque o pet {PetId} ja possui prontuario", prontuario.Pet.Id);
-            throw new InvalidOperationException("O pet já possui um prontuário.");
+            throw new ConflictException("O pet já possui um prontuário.");
         }
 
         var prontuarioSalvo = await _prontuarioRepository.SalvarAsync(prontuario);
