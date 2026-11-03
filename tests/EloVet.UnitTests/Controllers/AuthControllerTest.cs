@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Api.Controllers;
 using EloVet.Api.Models.Auth;
 using EloVet.Api.Services;
@@ -41,28 +42,29 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task Register_UsuarioDuplicado_RetornaConflict()
+    public async Task Register_UsuarioDuplicado_PropagaConflictException()
     {
         _authService.Setup(service => service.RegisterAsync(It.IsAny<AuthCredentials>()))
-            .ThrowsAsync(new InvalidOperationException("O usuário informado já existe."));
+            .ThrowsAsync(new ConflictException("O usuário informado já existe."));
 
-        var result = await _controller.Register(
-            new AuthRequest { Username = "user", Password = "secret" });
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 409.
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => _controller.Register(
+            new AuthRequest { Username = "user", Password = "secret" }));
 
-        var conflict = Assert.IsType<ConflictObjectResult>(result);
-        Assert.Equal("O usuário informado já existe.", conflict.Value);
+        Assert.Equal("O usuário informado já existe.", exception.Message);
     }
 
     [Fact]
-    public async Task Register_CredenciaisInvalidas_RetornaBadRequest()
+    public async Task Register_CredenciaisInvalidas_PropagaInvalidInputException()
     {
         _authService.Setup(service => service.RegisterAsync(It.IsAny<AuthCredentials>()))
-            .ThrowsAsync(new ArgumentException("Usuário e senha são obrigatórios."));
+            .ThrowsAsync(new InvalidInputException("Usuário e senha são obrigatórios."));
 
-        var result = await _controller.Register(new AuthRequest());
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 400.
+        var exception = await Assert.ThrowsAsync<InvalidInputException>(
+            () => _controller.Register(new AuthRequest()));
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Usuário e senha são obrigatórios.", badRequest.Value);
+        Assert.Equal("Usuário e senha são obrigatórios.", exception.Message);
     }
 
     [Fact]

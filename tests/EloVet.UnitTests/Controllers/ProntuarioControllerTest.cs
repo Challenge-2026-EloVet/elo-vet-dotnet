@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Models;
 using EloVet.Api.Models;
@@ -76,7 +77,7 @@ public class ProntuarioControllerTests
     }
 
     [Fact]
-    public async Task SalvarAsync_ProntuarioJaExiste_RetornaConflict()
+    public async Task SalvarAsync_ProntuarioJaExiste_PropagaConflictException()
     {
         // Arrange
         var prontuario = new Prontuario
@@ -99,18 +100,18 @@ public class ProntuarioControllerTests
             .Setup(s => s.SalvarAsync(It.Is<Prontuario>(value =>
                 value.Pet.Id == "pet-001")))
             .ThrowsAsync(
-                new InvalidOperationException(
+                new ConflictException(
                     "O pet já possui um prontuário."));
 
         // Act
-        var resultado = await _controller.SalvarAsync(request);
+        var exception = await Assert.ThrowsAsync<ConflictException>(
+            () => _controller.SalvarAsync(request));
 
         // Assert
-        var conflictResult = Assert.IsType<ConflictObjectResult>(resultado);
-
+        // O controller não trata a exceção: o GlobalExceptionHandler a converte em 409.
         Assert.Equal(
             "O pet já possui um prontuário.",
-            conflictResult.Value);
+            exception.Message);
     }
 
     // ============================================================
@@ -382,7 +383,7 @@ public class ProntuarioControllerTests
     }
 
     [Fact]
-    public async Task EditarAsync_IdDaRotaDiferenteDoBody_RetornaBadRequest()
+    public async Task EditarAsync_IdDaRotaDiferenteDoBody_LancaInvalidInputException()
     {
         // Arrange
         var idDaRota = "507f1f77bcf86cd799439011";
@@ -406,16 +407,14 @@ public class ProntuarioControllerTests
         };
 
         // Act
-        var resultado =
-            await _controller.EditarAsync(idDaRota, request);
+        var exception = await Assert.ThrowsAsync<InvalidInputException>(
+            () => _controller.EditarAsync(idDaRota, request));
 
         // Assert
-        var badRequestResult =
-            Assert.IsType<BadRequestObjectResult>(resultado);
-
+        // O GlobalExceptionHandler converte a exceção em 400.
         Assert.Equal(
             "O id não corresponde ao id do prontuário no body.",
-            badRequestResult.Value);
+            exception.Message);
 
         _mockService.Verify(
             s => s.EditarAsync(

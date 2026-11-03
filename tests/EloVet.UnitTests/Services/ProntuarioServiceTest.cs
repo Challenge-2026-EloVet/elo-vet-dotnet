@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Models;
 using EloVet.Application.Services;
@@ -80,7 +81,7 @@ public class ProntuarioServiceTests
             .ReturnsAsync(prontuarioExistente);
 
         // Act
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<ConflictException>(
             () => _service.SalvarAsync(prontuario));
 
         // Assert

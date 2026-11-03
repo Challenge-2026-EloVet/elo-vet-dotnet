@@ -1,3 +1,4 @@
+using EloVet.Application.Exceptions;
 using EloVet.Application.Interfaces;
 using EloVet.Application.Models;
 using EloVet.Application.Services;
@@ -49,7 +50,7 @@ public class AuthServiceTests
         _userRepository.Setup(repository => repository.FindByUsernameAsync("user"))
             .ReturnsAsync(new User { Username = "user" });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
             _service.RegisterAsync(new AuthCredentials("user", "secret")));
 
         Assert.Equal("O usuário informado já existe.", exception.Message);
@@ -64,7 +65,7 @@ public class AuthServiceTests
         string username,
         string password)
     {
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+        var exception = await Assert.ThrowsAsync<InvalidInputException>(() =>
             _service.RegisterAsync(new AuthCredentials(username, password)));
 
         Assert.Equal("Usuário e senha são obrigatórios.", exception.Message);
